@@ -40,8 +40,8 @@ char * host="www.itexmo.com";
 char * url="/php_api/api.php";
 
 char targetnumber[]="09760730306";
-String APIcode="ST-SIRJE337008_K8RSN";
-String APIpass="gpw5c%7Dj4mm";
+String APIcode="ST-SIRJE337008_XN49S";
+String APIpass="keqj6h$(d%";
 
 void sendsms(String a="sdas")
 {
@@ -98,9 +98,9 @@ void setup() {
   Serial.begin(115200);
   EEPROM.begin(sizeof(targetnumber));
   // Configures static IP address
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-    Serial.println("STA Failed to configure");
-  }
+//  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+//    Serial.println("STA Failed to configure");
+//  }
   
   // Connect to Wi-Fi network with SSID and password
   Serial.print("Connecting to ");
@@ -183,67 +183,77 @@ void loop(){
           if (currentLine.length() == 0) {
             // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
             // and a content-type so the client knows what's coming, then a blank line:
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println("Connection: close");
-            client.println();
-            bool issetphone=header.indexOf("setphone")!=-1;
-            if(issetphone)
+            if(header.indexOf("GET / HTTP/1.1")!=-1)
             {
-              int setting=header.indexOf("phone=");
-              if(setting!=-1)
-              {
-                String ph=header.substring(setting+6);
-                char  number[12];
-                ph.toCharArray(number,12);
-                for(int i=0; i<11; ++i){
-                    EEPROM.write(addr + i, number[i]);
-                }
-                EEPROM.commit();
-                readnumber();
-                client.println("<!DOCTYPE html><html>");
-                client.println("<head><meta http-equiv = \"refresh\" content = \"3; url = /setphone\" />");
-                // Web Page Heading
-                client.println("<body><center><h1>Coins Changer SMS Setting</h1>");
-                client.println("<h3 style=\"color:gray\">Setting phone to <span style=\"font-weight:bold\">"+String(number)+"</span></h3>");
-                client.println("</center></body></html>");
-              }
-              else{
-                // Display the HTML web page
-                client.println("<!DOCTYPE html><html>");
-                client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-                client.println("<link rel=\"icon\" href=\"data:,\">");
-                // CSS to style the on/off buttons 
-                // Feel free to change the background-color and font-size attributes to fit your preferences
-                client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-                client.println(".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;");
-                client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-                client.println(".button2 {background-color: #77878A;}</style></head>");
-                
-                // Web Page Heading
-                client.println("<body><h1>Coins Changer SMS Setting</h1>");
-                
-                client.println("<center><form>");
-                client.println("<h1>Set Phone Number</h1>");
-                client.println("<h3>Current: <span style=\"font-weight:bold\">"+String(targetnumber)+"</span></h3>");
-                client.println("<label for=\"phone\">Set Phone Number</label>");
-                client.println("<input id=\"phone\" type=\"text\" name=\"phone\">");
-                client.println("<button type=\"submit\">Set</button>");
-                client.println("</form></center>");
-                client.println("</body></html>");
-              }
+              client.println("HTTP/1.1 302 Redirect");
+              client.println("Location: /setphone");
+              client.println();
             }
             else
             {
-              int pos=header.indexOf("GET /")+5;
-              int pos2=header.indexOf("/",pos+1);
-   
-              String trans=header.substring(pos,header.indexOf("/",pos+1));
-              String coinstat=header.substring(pos2+1,header.indexOf(" ",pos2));
-              Serial.println("sending values");
-              sendmessage(coinstat,trans);
-              client.println("Sending Message...");
+              client.println("HTTP/1.1 200 OK");
+              client.println("Content-type:text/html");
+              client.println("Connection: close");
+              client.println();
+              bool issetphone=header.indexOf("setphone")!=-1;
+              if(issetphone)
+              {
+                int setting=header.indexOf("phone=");
+                if(setting!=-1)
+                {
+                  String ph=header.substring(setting+6);
+                  char  number[12];
+                  ph.toCharArray(number,12);
+                  for(int i=0; i<11; ++i){
+                      EEPROM.write(addr + i, number[i]);
+                  }
+                  EEPROM.commit();
+                  readnumber();
+                  client.println("<!DOCTYPE html><html>");
+                  client.println("<head><meta http-equiv = \"refresh\" content = \"3; url = /setphone\" />");
+                  // Web Page Heading
+                  client.println("<body><center><h1>Coins Changer SMS Setting</h1>");
+                  client.println("<h3 style=\"color:gray\">Setting phone to <span style=\"font-weight:bold\">"+String(number)+"</span></h3>");
+                  client.println("</center></body></html>");
+                }
+                else{
+                  // Display the HTML web page
+                  client.println("<!DOCTYPE html><html>");
+                  client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+                  client.println("<link rel=\"icon\" href=\"data:,\">");
+                  // CSS to style the on/off buttons 
+                  // Feel free to change the background-color and font-size attributes to fit your preferences
+                  client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
+                  client.println(".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;");
+                  client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
+                  client.println(".button2 {background-color: #77878A;}</style></head>");
+                  
+                  // Web Page Heading
+                  client.println("<body><h1>Coins Changer SMS Setting</h1>");
+                  
+                  client.println("<center><form>");
+                  client.println("<h1>Set Phone Number</h1>");
+                  client.println("<h3>Current: <span style=\"font-weight:bold\">"+String(targetnumber)+"</span></h3>");
+                  client.println("<label for=\"phone\">Set Phone Number</label>");
+                  client.println("<input id=\"phone\" type=\"text\" name=\"phone\">");
+                  client.println("<button type=\"submit\">Set</button>");
+                  client.println("</form></center>");
+                  client.println("</body></html>");
+                }
+              }
+              else
+              {
+                int pos=header.indexOf("GET /")+5;
+                int pos2=header.indexOf("/",pos+1);
+     
+                String trans=header.substring(pos,header.indexOf("/",pos+1));
+                String coinstat=header.substring(pos2+1,header.indexOf(" ",pos2));
+                Serial.println("sending values");
+                sendmessage(coinstat,trans);
+                client.println("Sending Message...");
+              }
             }
+            
      
             // The HTTP response ends with another blank line
             client.println();
