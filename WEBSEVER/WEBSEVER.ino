@@ -40,8 +40,8 @@ char * host="www.itexmo.com";
 char * url="/php_api/api.php";
 
 char targetnumber[]="09760730306";
-String APIcode="ST-SIRJE337008_XN49S";
-String APIpass="keqj6h$(d%";
+String APIcode="ST-SIRJE337008_NIEA2";
+String APIpass="yp%5Dq%23!srgh";
 
 void sendsms(String a="sdas")
 {
@@ -183,6 +183,7 @@ void loop(){
           if (currentLine.length() == 0) {
             // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
             // and a content-type so the client knows what's coming, then a blank line:
+            if(header.indexOf("GET /favicon.ico")!=-1) return;
             if(header.indexOf("GET / HTTP/1.1")!=-1)
             {
               client.println("HTTP/1.1 302 Redirect");

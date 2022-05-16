@@ -8,13 +8,10 @@
 #include <ESP8266HTTPClient.h>
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 #define BOUNCE_DURATION 20    //20 ms
-#define BOUNCE_DURATIONhop 80    //20 ms
+#define BOUNCE_DURATIONhop 80 //20 ms
 
-
-char * host="www.itexmo.com";
-//char * host="103.150.203.59";
-char * url="/php_api/api.php";
-//char * url="/";
+char *host = "192.168.141.234";
+char *url = "/";
 
 #define BILL D3
 #define COIN D5
@@ -25,16 +22,10 @@ char * url="/php_api/api.php";
 
 #define RESET D0
 
-const char* ssid = "coinchanger";
-const char* password = "c0in1234";
+const char *ssid = "money-changer";
+const char *password = "c0in1234";
 unsigned int addr = 0;
 unsigned int coinstat;
-
-String message="";
-String targetnumber="09760730306";
-String APIcode="ST-PRINC112245_4CKP3";
-String APIpass="fpxya%24k%23%26zs";
-
 
 int coinvaladd = 0;
 int opervaladd = 10;
@@ -77,7 +68,7 @@ int checked = true;
 volatile unsigned long bouncetime = 0;
 volatile unsigned long bouncetime2 = 0;
 volatile unsigned long bouncetimehop = 0;
-volatile int credit = 0;
+volatile int credit = 20;
 volatile int dispensed = 0;
 int stopcount = 0;
 unsigned long prevmillis = 0;
@@ -91,24 +82,26 @@ int operation = 1;
 int coincount;
 long endcount;
 unsigned int average;
-void setup() {
-  Serial.begin(9600);
+void setup()
+{
+  Serial.begin(115200);
   ESP.wdtFeed();
-//  WiFi.mode(WIFI_OFF);
-WiFi.mode(WIFI_STA);
-WiFi.begin(ssid, password);
-while(WiFi.status() != WL_CONNECTED){
-        Serial.print(".");
-        delay(100);
-    }
+  //  WiFi.mode(WIFI_OFF);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(100);
+  }
 
-    Serial.println("\nConnected to the WiFi network");
-    Serial.print("Local ESP32 IP: ");
-    Serial.println(WiFi.localIP());
+  Serial.println("\nConnected to the WiFi network");
+  Serial.print("Local ESP32 IP: ");
+  Serial.println(WiFi.localIP());
 
   EEPROM.begin(sizeof(int));
-EEPROM.get(addr, coinstat);
-  
+  EEPROM.get(addr, coinstat);
+
   state = 1;
   buzz();
   pinMode(buzzer, OUTPUT);
@@ -128,7 +121,7 @@ EEPROM.get(addr, coinstat);
   lcd.clear();
   lcd.backlight();
   lcd.print("initializing..");
-  
+
   //EICRA &= ~3;  // clear existing flags
   //EICRA |= 2;   // set wanted flags (falling level interrupt)
   //EIMSK |= 1;   // enable it
@@ -146,160 +139,77 @@ EEPROM.get(addr, coinstat);
   pinMode(COIN, INPUT_PULLUP);
   pinMode(HOPPER, INPUT);
   ESP.wdtFeed();
-  attachInterrupt (digitalPinToInterrupt(BILL), ISR_count, CHANGE);
-  attachInterrupt (digitalPinToInterrupt(COIN), ISR_count3, CHANGE);
-  attachInterrupt (digitalPinToInterrupt(HOPPER), ISR_count2, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BILL), ISR_count, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(COIN), ISR_count3, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(HOPPER), ISR_count2, FALLING);
   delay(1000);
   ESP.wdtFeed();
 }
-//void sendmessage(String used){
-////    message="Transaction!%0A";
-////    message+="%0A";
-////    message+="! client transaction recorded%0A";
-////    message+="Transacted Coins: "+used+"PHP\r\n";
-////    message+="Remaining Coins: "+(String(coinstat))+"PHP%0A";
-////    message+="%0A";
-////    message+="%0A";
-////    message+="Coin-changer 2021\r\n";
-//    sendsms(message);
-//    if(coinstat<=20) //alert
-//    {
-////      message="Coins alert!%0A";
-////      message+="%0A";
-////      message+="you're running out of coins%0A";
-////      message+="Coins: !"+(String(coinstat))+"PHP%0A";
-////      message+="%0A";
-////      message+="%0A";
-////      message+="Coin-changer 2021%0A";
-//      sendsms(message);
-//    }
-//}
-//  WiFiClientSecure client;
-//void sendsms(String content) {
-//
-//  delay(1000);
-//  String msg="1="+targetnumber+"&2=HKLHH&3="+APIcode+"&passwd="+APIpass;
-//  // Use WiFiClientSecure class to create TLS connection
-//  Serial.print("connecting to : '");
-//  Serial.print(host);
-//  Serial.println("'");
-////  client.setInsecure();
-//  
-//  if (!client.connect(host, 80)) {
-//    Serial.println("connection failed");
-//    return;
-//  }
-//  unsigned long timeout = millis();
-////  bool x=client.connect(host, 443);
-////  while (!x) {
-////    if (millis() - timeout > 100000) {
-////      Serial.println(">>> Client Timeout !");
-////      client.stop();
-////      return;
-////    }
-////    delay(1000);
-////  }
-//
-//  Serial.print("requesting URL: '");
-//  Serial.print(url);
-//  Serial.println("'");
-//  String req=String("POST ") + url + " HTTP/1.1\r\n" +
-//          "Host: " + host + "\r\n" +
-//          "Accept: */*\r\n" +
-//          "Content-Type: application/x-www-form-urlencoded\r\n" +
-//          "Content-Length: "+msg.length()+"\r\n" +
-//          "\r\n " + msg
-//           + "\r\n";
-//           
-//  Serial.println(req);
-//  client.print(req);
-//
-//  Serial.println("request sent");
-//  timeout = millis();
-//  while (client.available() == 0) {
-//    if (millis() - timeout > 5000) {
-//      Serial.println(">>> Client Timeout !");
-//      client.stop();
-//      return;
-//    }
-//  }
-//  
-//  // Read all the lines of the reply from server and print them to Serial
-//  while(client.available()){
-//    String line = client.readStringUntil('\r');
-//    Serial.print(line);
-//  }
-//}
-void sendsms(String a="sdas")
+
+void sendsms()
 {
-  Serial.println("sadas");
-  // Use WiFiClientSecure class to create TLS connection
-  WiFiClientSecure client;
-  Serial.print("connecting to ");
-  Serial.println(host);
-  client.setInsecure();
+  String a="/"+(String)coinstat+"/"+(String)credit;
+  String endpoint="http://192.168.141.234"+a;
 
-//  Serial.printf("Using fingerprint '%s'\n", fingerprint);
-//  client.setFingerprint(fingerprint);
+  // // Use WiFiClient class to create TCP connections
+  WiFiClient client;
 
-  if (!client.connect(host, 443)) {
-    Serial.println("connection failed");
-    return;
-  }
+  // if (!client.connect(host, 80))
+  // {
+  //   Serial.println("connection failed");
+  //   Serial.println("wait 5 sec...");
+  //   delay(5000);
+  //   return;
+  // }
+  // String req="GET " + a + " HTTP/1.1\r\n" +
+  //              "Host: " + host + "\r\n \r\n" ;
+  // Serial.println(req);
+  // client.print(req);
 
-  String url = "/php_api/api.php";
-  Serial.print("requesting URL: ");
-  Serial.println(url);
-  
-    String message="Transaction!%0A";
-    message+="%0A";
-    message+="! client transaction recorded%0A";
-    message+="Transacted Coins: 1PHP\r\n";
-    message+="Remaining Coins: 34PHP%0A";
-    message+="%0A";
-    message+="%0A";
-    message+="Coin-changer 2021\r\n";
-    String msg="1=09760730306&2="+message+"&3="+APIcode+"&passwd="+APIpass;
-    client.print(String("POST ") + url + " HTTP/1.1\r\n" +
-          "Host: " + host + "\r\n" +
-          "Accept: */*\r\n" +
-          "Content-Type: application/x-www-form-urlencoded\r\n" +
-          "Content-Length: "+msg.length()+"\r\n" +
-          "\r\n " + msg
-           + "\r\n");
-           
-//  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-//               "Host: " + host + "\r\n" +
-//          "Content-Type: application/x-www-form-urlencoded\r\n" +
-////               "User-Agent: BuildFailureDetectorESP8266\r\n" +
-//               "Connection: close\r\n\r\n");
-//               client.println(msg);
+  // //read back one line from server
+  // Serial.println("receiving from remote server");
+  // String line = client.readStringUntil('\r');
+  // Serial.println(line);
 
-  Serial.println("request sent");
-  while (client.connected()) {
-    String line = client.readStringUntil('\n');
-    if (line == "\r") {
-      Serial.println("headers received");
-      break;
+  // Serial.println("closing connection");
+  // client.stop();
+  HTTPClient http;
+
+    Serial.print("[HTTP] begin...\n");
+    if (http.begin(client, endpoint)) {  // HTTP
+
+
+      Serial.print("[HTTP] GET...\n");
+      // start connection and send HTTP header
+      int httpCode = http.GET();
+
+      // httpCode will be negative on error
+      if (httpCode > 0) {
+        // HTTP header has been send and Server response header has been handled
+        Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+
+        // file found at server
+        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+          String payload = http.getString();
+          Serial.println(payload);
+        }
+      } else {
+        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+      }
+
+      http.end();
+    } else {
+      Serial.printf("[HTTP} Unable to connect\n");
     }
-  }
-  String line = client.readStringUntil('\n');
-//  if (line.startsWith("{\"state\":\"success\"")) {
-//    Serial.println("esp8266/Arduino CI successfull!");
-//  } else {
-//    Serial.println("esp8266/Arduino CI has failed");
-//  }
-  Serial.println("reply was:");
-  Serial.println("==========");
-  Serial.println(line);
-  Serial.println("==========");
-  Serial.println("closing connection");
 }
-ICACHE_RAM_ATTR void ISR_count() {
+ICACHE_RAM_ATTR void ISR_count()
+{
 
-  if (millis() > bouncetime) {
+  if (millis() > bouncetime)
+  {
 
-    if (!digitalRead (BILL)) {
+    if (!digitalRead(BILL))
+    {
 
       credit += 10;
       //Serial.print("credit: ");
@@ -308,13 +218,15 @@ ICACHE_RAM_ATTR void ISR_count() {
 
     bouncetime = millis() + BOUNCE_DURATION;
   }
-
 }
-ICACHE_RAM_ATTR void ISR_count3() {
+ICACHE_RAM_ATTR void ISR_count3()
+{
 
-  if (millis() > bouncetime2) {
+  if (millis() > bouncetime2)
+  {
 
-    if (!digitalRead (COIN)) {
+    if (!digitalRead(COIN))
+    {
 
       credit += 1;
       coinstat++;
@@ -324,28 +236,30 @@ ICACHE_RAM_ATTR void ISR_count3() {
 
     bouncetime2 = millis() + BOUNCE_DURATION;
   }
-
 }
 
-ICACHE_RAM_ATTR void ISR_count2() {
-  if (millis() > bouncetimehop) {
-      delayMicroseconds(10000);
-    if (digitalRead(HOPPER) == LOW) {
+ICACHE_RAM_ATTR void ISR_count2()
+{
+  if (millis() > bouncetimehop)
+  {
+    delayMicroseconds(10000);
+    if (digitalRead(HOPPER) == LOW)
+    {
       dispensed++;
 
       bouncetimehop = millis() + BOUNCE_DURATIONhop;
     }
   }
-
 }
 
-void loop() {
+void loop()
+{
   // sei();
   coinchangerset();
   ESP.wdtFeed();
 }
 
-void change1 (unsigned long zzz)
+void change1(unsigned long zzz)
 {
   cli();
   delay(800);
@@ -405,12 +319,11 @@ void change1 (unsigned long zzz)
     credit = output * coinval;
     state = 11;
     dispensed = 0;
-    coinstat-=output;
+    coinstat -= output;
     EEPROM.put(addr, coinstat);
-      EEPROM.commit();
-      
-  sendsms("sds");
-//      sendmessage(String(output));
+    EEPROM.commit();
+
+    sendsms();
   }
   else if (yy == 1)
   {
@@ -419,7 +332,6 @@ void change1 (unsigned long zzz)
     delay(100);
     credit = 0;
     dispensed = 0;
-
   }
   sei();
 
@@ -438,14 +350,14 @@ void coinchangerset()
     lcddisplay();
   }
   int xxx = !digitalRead(BUTTON);
-//  int res = !digitalRead(RESET);
-//  if(res)
-//  {
-//     coinstat=500;
-//     EEPROM.put(addr, coinstat);
-//     Serial.println("reseted");
-//      EEPROM.commit();
-//  }
+  int res = !digitalRead(RESET);
+  if (res)
+  {
+    coinstat = 500;
+    EEPROM.put(addr, coinstat);
+    Serial.println("reseted");
+    EEPROM.commit();
+  }
   if (xxx)
   {
     lcd.clear();
@@ -480,7 +392,6 @@ void coinchangerset()
               yy = 0;
               break;
             }
-
           }
           digitalWrite(RELAY, HIGH);
           // EIFR = bit (INTF1);
@@ -530,11 +441,10 @@ void coinchangerset()
         int output = totaldisp * coinvalue;
         Serial.print("OUT");
         Serial.println(output);
-    coinstat-=output;
-    EEPROM.put(addr, coinstat);
-      EEPROM.commit();
-  sendsms("sds");
-//      sendmessage(String(output));
+        coinstat -= output;
+        EEPROM.put(addr, coinstat);
+        EEPROM.commit();
+    sendsms();
         credit = credit - output;
         state = 1;
         dispensed = 0;
@@ -546,11 +456,10 @@ void coinchangerset()
         int output = totaldisp * coinvalue;
         Serial.print("OUT");
         Serial.println(output);
-    coinstat-=output;
-//  sendsms("sds");
-//    sendmessage(String(output));
-    EEPROM.put(addr, coinstat);
-      EEPROM.commit();
+        coinstat -= output;
+    sendsms();
+        EEPROM.put(addr, coinstat);
+        EEPROM.commit();
         credit = credit - output;
         state = 0;
         delay(100);
@@ -559,73 +468,11 @@ void coinchangerset()
         dispensed = 0;
         ou = 0;
         totaldisp = 0;
-         WiFiClientSecure client;
-  Serial.print("connecting to ");
-  Serial.println(host);
-  client.setInsecure();
-
-//  Serial.printf("Using fingerprint '%s'\n", fingerprint);
-//  client.setFingerprint(fingerprint);
-
-  if (!client.connect(host, 443)) {
-    Serial.println("connection failed");
-    return;
-  }
-
-  String url = "/php_api/api.php";
-  Serial.print("requesting URL: ");
-  Serial.println(url);
-  
-    String message="Transaction!%0A";
-    message+="%0A";
-    message+="! client transaction recorded%0A";
-    message+="Transacted Coins: 1PHP\r\n";
-    message+="Remaining Coins: 34PHP%0A";
-    message+="%0A";
-    message+="%0A";
-    message+="Coin-changer 2021\r\n";
-    String msg="1=09760730306&2="+message+"&3="+APIcode+"&passwd="+APIpass;
-    client.print(String("POST ") + url + " HTTP/1.1\r\n" +
-          "Host: " + host + "\r\n" +
-          "Accept: */*\r\n" +
-          "Content-Type: application/x-www-form-urlencoded\r\n" +
-          "Content-Length: "+msg.length()+"\r\n" +
-          "\r\n " + msg
-           + "\r\n");
-           
-//  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-//               "Host: " + host + "\r\n" +
-//          "Content-Type: application/x-www-form-urlencoded\r\n" +
-////               "User-Agent: BuildFailureDetectorESP8266\r\n" +
-//               "Connection: close\r\n\r\n");
-//               client.println(msg);
-
-  Serial.println("request sent");
-  while (client.connected()) {
-    String line = client.readStringUntil('\n');
-    if (line == "\r") {
-      Serial.println("headers received");
-      break;
-    }
-  }
-  String line = client.readStringUntil('\n');
-//  if (line.startsWith("{\"state\":\"success\"")) {
-//    Serial.println("esp8266/Arduino CI successfull!");
-//  } else {
-//    Serial.println("esp8266/Arduino CI has failed");
-//  }
-  Serial.println("reply was:");
-  Serial.println("==========");
-  Serial.println(line);
-  Serial.println("==========");
-  Serial.println("closing connection");
       }
       sei();
     }
   }
 }
-
-
 
 void lcddisplay()
 {
@@ -652,8 +499,6 @@ void lcddisplay2()
   lcd.print(credit);
   delay(200);
 }
-
-
 
 void buzz()
 {
